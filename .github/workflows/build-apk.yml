@@ -32,10 +32,7 @@ jobs:
         run: npm exec cap sync android
 
       - name: Build APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+        run: chmod +x android/gradlew && cd android && ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v5
