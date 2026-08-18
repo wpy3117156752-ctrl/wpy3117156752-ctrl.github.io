@@ -1,0 +1,12 @@
+{
+  "name": "flower",
+  "version": "1.0.0",
+  "description": "✅ 无需 npm / 无需 node_modules / 无需任何打包工具  \r ✅ 双击 `index.html` 即可在电脑浏览器中运行  \r ✅ 直接用手机浏览器打开也能用",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
