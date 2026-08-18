@@ -1,0 +1,22 @@
+{
+  "name": "图片识别出入库系统",
+  "short_name": "花库",
+  "description": "花卉图片识别出入库管理",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192x192/4CAF50/FFFFFF?text=花",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512x512/4CAF50/FFFFFF?text=花",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
