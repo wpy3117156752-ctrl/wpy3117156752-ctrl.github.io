@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#4CAF50" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<title>图片识别出入库系统</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f5f5f5; color: #333; font-size: 14px; }
+#app { width: 100%; height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: #f5f5f5; }
+.navbar { height: 44px; padding: 0 16px; background: linear-gradient(135deg, #4CAF50, #45a049); color: white; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.navbar-title { font-size: 18px; font-weight: 600; }
+.navbar-action { font-size: 14px; padding: 4px 12px; background: rgba(255,255,255,0.2); border-radius: 15px; cursor: pointer; }
+.scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.scroll-content { padding: 12px; padding-bottom: 90px; }
+.scan-button { width: 100%; padding: 18px; background: linear-gradient(135deg, #4CAF50, #45a049); color: white; border-radius: 12px; font-size: 18px; font-weight: 600; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(76,175,80,0.4); border: none; cursor: pointer; }
+.scan-button:active { transform: scale(0.98); opacity: 0.9; }
+.scan-icon { font-size: 20px; margin-right: 6px; }
+.manual-button { width: 100%; padding: 18px; background: white; color: #4CAF50; border-radius: 12px; font-size: 18px; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 1px solid #4CAF50; cursor: pointer; margin-top: 12px; }
+.mode-switch { background: white; border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+.mode-switch-title { font-size: 15px; font-weight: 600; color: #333; }
+.mode-buttons { display: flex; gap: 8px; margin-top: 8px; }
+.mode-btn { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ddd; background: white; color: #666; font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+.mode-btn.active.in { background: #e8f5e9; border-color: #4CAF50; color: #4CAF50; font-weight: 600; }
+.mode-btn.active.out { background: #ffebee; border-color: #f44336; color: #f44336; font-weight: 600; }
+.card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.card-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+.card-title .count { font-size: 13px; color: #999; font-weight: normal; }
+.empty-state { text-align: center; padding: 30px 15px; }
+.empty-icon { font-size: 50px; margin-bottom: 10px; opacity: 0.3; }
+.empty-text { font-size: 15px; color: #999; margin-bottom: 6px; }
+.empty-hint { font-size: 13px; color: #bbb; }
+.record-item { display: flex; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: flex-start; }
+.record-item:last-child { border-bottom: none; }
+.record-image { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; margin-right: 12px; background: #f0f0f0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+.record-image img { width: 100%; height: 100%; border-radius: 8px; object-fit: cover; }
+.record-info { flex: 1; min-width: 0; }
+.record-name { font-size: 15px; font-weight: 500; color: #333; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-code { font-size: 13px; color: #999; margin-bottom: 4px; }
+.record-meta { font-size: 12px; color: #999; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.record-amount { font-size: 16px; font-weight: 600; flex-shrink: 0; margin-left: 8px; text-align: right; }
+.record-amount.in { color: #4CAF50; }
+.record-amount.out { color: #f44336; }
+.record-price-info { font-size: 12px; color: #666; margin-top: 4px; line-height: 1.5; }
+.record-price-info .profit { color: #FF9800; font-weight: 600; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+.badge.in { background: #e8f5e9; color: #2e7d32; }
+.badge.out { background: #ffebee; color: #c62828; }
+.stock-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.stock-item:last-child { border-bottom: none; }
+.stock-image { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; margin-right: 12px; background: #f0f0f0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 25px; }
+.stock-image img { width: 100%; height: 100%; border-radius: 8px; object-fit: cover; }
+.stock-info { flex: 1; min-width: 0; }
+.stock-name { font-size: 15px; font-weight: 500; color: #333; margin-bottom: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stock-code { font-size: 12px; color: #999; margin-bottom: 3px; }
+.stock-price { font-size: 11px; color: #FF9800; margin-bottom: 2px; }
+.stock-price-min { font-size: 10px; color: #e91e63; }
+.stock-quantity { font-size: 18px; font-weight: 700; color: #4CAF50; flex-shrink: 0; margin-left: 8px; }
+.stats-card { background: linear-gradient(135deg, #4CAF50, #45a049); color: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; }
+.stats-title { font-size: 14px; opacity: 0.9; margin-bottom: 10px; }
+.stats-row { display: flex; justify-content: space-around; }
+.stat-item { text-align: center; }
+.stat-value { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+.stat-label { font-size: 12px; opacity: 0.85; }
+.profit-card { background: linear-gradient(135deg, #FF9800, #F57C00); color: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; }
+.profit-card.stats-card { background: linear-gradient(135deg, #FF9800, #F57C00); }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.modal { background: white; border-radius: 12px; width: 100%; max-width: 320px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
+.modal.wide { max-width: 400px; }
+.modal-header { padding: 15px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+.modal-title { font-size: 17px; font-weight: 600; }
+.modal-close { font-size: 18px; color: #999; cursor: pointer; padding: 0 5px; }
+.modal-body { padding: 15px; overflow-y: auto; flex: 1; }
+.modal-footer { padding: 12px 15px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px; }
+.modal-btn { flex: 1; padding: 12px; border-radius: 8px; font-size: 16px; text-align: center; cursor: pointer; border: none; font-weight: 500; }
+.modal-btn.primary { background: #4CAF50; color: white; }
+.modal-btn.secondary { background: #f5f5f5; color: #666; }
+.modal-btn.danger { background: #f44336; color: white; }
+.modal-btn.warning { background: #FF9800; color: white; }
+.form-item { margin-bottom: 15px; }
+.form-label { font-size: 14px; color: #333; margin-bottom: 6px; display: block; font-weight: 500; }
+.form-label .required { color: #f44336; }
+.form-help { font-size: 11px; color: #999; margin-top: 4px; }
+.form-input { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 15px; box-sizing: border-box; -webkit-appearance: none; appearance: none; }
+.form-input:focus { border-color: #4CAF50; outline: none; }
+.form-input.warn { border-color: #FF9800; background: #fff8e1; }
+.form-row { display: flex; gap: 10px; }
+.form-row .form-item { flex: 1; }
+.toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.85); color: white; padding: 12px 20px; border-radius: 8px; font-size: 14px; z-index: 2000; max-width: 80%; text-align: center; }
+.toast.warn { background: #FF9800; }
+.toast.error { background: #f44336; }
+.preview-image { width: 100%; max-height: 200px; border-radius: 8px; margin-bottom: 12px; object-fit: contain; background: #f0f0f0; }
+.tip { background: #fff8e1; color: #5d4037; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; display: flex; align-items: flex-start; gap: 6px; }
+.tip-icon { font-size: 16px; flex-shrink: 0; }
+.tip.success { background: #e8f5e9; color: #2e7d32; }
+.tip.danger { background: #ffebee; color: #c62828; }
+.hidden { display: none !important; }
+.file-input { display: none; }
+.price-summary { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px; color: #555; border-left: 3px solid #4CAF50; }
+.price-summary .profit { color: #FF9800; font-weight: 600; }
+.price-summary .loss { color: #f44336; font-weight: 600; }
+.price-summary-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.price-summary-row:last-child { margin-bottom: 0; }
+@media (min-width: 768px) {
+  .modal { max-width: 500px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="navbar">
+    <div class="navbar-title">📦 图片识别出入库</div>
+    <div class="navbar-action" onclick="showInventory()">库存</div>
+  </div>
+  <div class="scroll-area">
+    <div class="scroll-content">
+      <div class="stats-card">
+        <div class="stats-title">📊 实时统计</div>
+        <div class="stats-row">
+          <div class="stat-item">
+            <div class="stat-value" id="stat-in">0</div>
+            <div class="stat-label">今日入库</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-out">0</div>
+            <div class="stat-label">今日出库</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">库存品种</div>
+          </div>
+        </div>
+      </div>
+      <div class="profit-card stats-card">
+        <div class="stats-title">💰 今日利润</div>
+        <div class="stats-row">
+          <div class="stat-item">
+            <div class="stat-value" id="stat-profit">¥0.00</div>
+            <div class="stat-label">净利润</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-sales">¥0.00</div>
+            <div class="stat-label">销售额</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="stat-value">¥0.00</div>
+            <div class="stat-label">库存价值</div>
+          </div>
+        </div>
+      </div>
+      <div class="mode-switch">
+        <div class="mode-switch-title">选择操作类型</div>
+        <div class="mode-buttons">
+          <div class="mode-btn in active" id="mode-in" onclick="setMode('in')">📥 入库</div>
+          <div class="mode-btn out" id="mode-out" onclick="setMode('out')">📤 出库</div>
+        </div>
+      </div>
+      <div class="tip">
+        <span class="tip-icon">💡</span>
+        <span>点击下方按钮拍照或从相册选择带有商品编号的图片，系统自动识别并记录<span id="mode-text">入库</span>。</span>
+      </div>
+      <button class="scan-button" onclick="triggerCamera()">
+        <span class="scan-icon">📷</span>
+        <span id="scan-btn-text">拍照识别入库</span>
+      </button>
+      <button class="manual-button" onclick="showManualModal()">
+        <span style="font-size:18px; margin-right:6px;">✏️</span>
+        手动输入编号
+      </button>
+      <div class="card" id="inventory-card" style="display:none;">
+        <div class="card-title">
+          <span>📦 当前库存 <span class="count" id="inventory-count"></span></span>
+          <span style="font-size:13px; color:#4CAF50; cursor:pointer;" onclick="showInventory()">查看全部 ›</span>
+        </div>
+        <div id="inventory-mini-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <span>📝 最近记录</span>
+          <span class="count" id="record-count">共 0 条</span>
+        </div>
+        <div id="recent-list"></div>
+      </div>
+    </div>
+  </div>
+  <input type="file" id="camera-input" class="file-input" accept="image/*" capture="environment" onchange="handleImage(event, true)">
+  <input type="file" id="gallery-input" class="file-input" accept="image/*" onchange="handleImage(event, false)">
+</div>
+
+<div class="modal-overlay hidden" id="manual-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">手动输入商品</div>
+      <div class="modal-close" onclick="closeModal('manual-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">商品编号 <span class="required">*</span></label>
+        <input type="text" id="manual-code" class="form-input" placeholder="例如: JG-CF-FC110B6029E8E5AD" />
+      </div>
+      <div class="form-item">
+        <label class="form-label">商品名称</label>
+        <input type="text" id="manual-name" class="form-input" placeholder="例如: 玫瑰花" />
+      </div>
+      <div class="form-item">
+        <label class="form-label">数量 <span class="required">*</span></label>
+        <input type="number" id="manual-qty" class="form-input" placeholder="1" value="1" min="1" />
+      </div>
+      <div id="price-fields-manual" style="display:none;">
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label">💰 进货价</label>
+            <input type="number" id="manual-cost" class="form-input" placeholder="0.00" min="0" step="0.01" />
+            <div class="form-help">每次进价</div>
+          </div>
+          <div class="form-item">
+            <label class="form-label">💵 卖价</label>
+            <input type="number" id="manual-price" class="form-input" placeholder="0.00" min="0" step="0.01" />
+            <div class="form-help">建议售价</div>
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">🛡️ 最低价</label>
+          <input type="number" id="manual-min-price" class="form-input" placeholder="0.00" min="0" step="0.01" />
+          <div class="form-help">低于此价禁止出售（保护利润）</div>
+        </div>
+        <div class="price-summary" id="price-summary-manual"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-btn secondary" onclick="closeModal('manual-modal')">取消</div>
+      <div class="modal-btn primary" onclick="confirmManual()">确认<span id="manual-mode-text">入库</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="preview-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">识别结果确认</div>
+      <div class="modal-close" onclick="closeModal('preview-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <img id="preview-img" class="preview-image" />
+      <div class="form-item">
+        <label class="form-label">识别到的编号</label>
+        <input type="text" id="preview-code" class="form-input" />
+      </div>
+      <div class="form-item">
+        <label class="form-label">商品名称</label>
+        <input type="text" id="preview-name" class="form-input" placeholder="选填" />
+      </div>
+      <div class="form-item">
+        <label class="form-label">数量</label>
+        <input type="number" id="preview-qty" class="form-input" value="1" min="1" />
+      </div>
+      <div id="price-fields-preview" style="display:none;">
+        <div class="form-row">
+          <div class="form-item">
+            <label class="form-label">💰 进货价</label>
+            <input type="number" id="preview-cost" class="form-input" placeholder="0.00" min="0" step="0.01" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">💵 卖价</label>
+            <input type="number" id="preview-price" class="form-input" placeholder="0.00" min="0" step="0.01" />
+          </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">🛡️ 最低价</label>
+          <input type="number" id="preview-min-price" class="form-input" placeholder="0.00" min="0" step="0.01" />
+          <div class="form-help">低于此价禁止出售</div>
+        </div>
+        <div class="price-summary" id="price-summary-preview"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-btn secondary" onclick="closeModal('preview-modal')">取消</div>
+      <div class="modal-btn primary" onclick="confirmPreview()">确认<span id="preview-mode-text">入库</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="inventory-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📦 库存清单</div>
+      <div class="modal-close" onclick="closeModal('inventory-modal')">✕</div>
+    </div>
+    <div class="modal-body" id="inventory-full-list"></div>
+    <div class="modal-footer">
+      <div class="modal-btn secondary" onclick="clearInventory()">清空数据</div>
+      <div class="modal-btn primary" onclick="closeModal('inventory-modal')">关闭</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="edit-price-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">💰 修改价格</div>
+      <div class="modal-close" onclick="closeModal('edit-price-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">商品</label>
+        <div id="edit-price-name" style="font-weight:600; color:#333;"></div>
+        <div id="edit-price-code" style="font-size:12px; color:#999;"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-item">
+          <label class="form-label">💰 进货价</label>
+          <input type="number" id="edit-cost" class="form-input" min="0" step="0.01" />
+        </div>
+        <div class="form-item">
+          <label class="form-label">💵 卖价</label>
+          <input type="number" id="edit-price" class="form-input" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">🛡️ 最低价</label>
+        <input type="number" id="edit-min-price" class="form-input" min="0" step="0.01" />
+        <div class="form-help">低于此价禁止出售</div>
+      </div>
+      <div class="price-summary" id="edit-price-summary"></div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-btn secondary" onclick="closeModal('edit-price-modal')">取消</div>
+      <div class="modal-btn primary" onclick="confirmEditPrice()">保存修改</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="out-price-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">💵 确认出库价格</div>
+      <div class="modal-close" onclick="closeModal('out-price-modal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-item">
+        <label class="form-label">商品</label>
+        <div id="out-price-name" style="font-weight:600; color:#333;"></div>
+        <div id="out-price-code" style="font-size:12px; color:#999;"></div>
+      </div>
+      <div class="form-item">
+        <label class="form-label">出库数量</label>
+        <input type="number" id="out-price-qty" class="form-input" min="1" value="1" />
+      </div>
+      <div class="form-item">
+        <label class="form-label">💵 实际卖价（每件）</label>
+        <input type="number" id="out-price-actual" class="form-input" min="0" step="0.01" />
+        <div class="form-help">最低价：<span id="out-price-min-display"></span></div>
+      </div>
+      <div class="price-summary" id="out-price-summary"></div>
+    </div>
+    <div class="modal-footer">
+      <div class="modal-btn secondary" onclick="closeModal('out-price-modal')">取消</div>
+      <div class="modal-btn primary" onclick="confirmOutPrice()">确认出库</div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+const STORAGE = { inventory: 'flower_inventory', records: 'flower_records' };
+function loadData(k) { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : []; } catch(e) { return []; } }
+function saveData(k, d) { try { localStorage.setItem(k, JSON.stringify(d)); } catch(e) {} }
+
+let inventory = loadData(STORAGE.inventory);
+let records = loadData(STORAGE.records);
+let currentMode = 'in';
+let previewImageData = null;
+let pendingOutCode = null;
+let pendingOutName = null;
+
+// 数据迁移：给老数据补充价格字段
+inventory.forEach(item => {
+  if (item.cost === undefined) item.cost = 0;
+  if (item.price === undefined) item.price = 0;
+  if (item.minPrice === undefined) item.minPrice = 0;
+});
+records.forEach(r => {
+  if (r.cost === undefined) r.cost = 0;
+  if (r.price === undefined) r.price = 0;
+});
+
+function fmtMoney(v) {
+  const n = parseFloat(v) || 0;
+  return '¥' + n.toFixed(2);
+}
+
+function calcProfit(price, cost, qty) {
+  return (parseFloat(price||0) - parseFloat(cost||0)) * (qty||0);
+}
+
+function updateUI() {
+  document.getElementById('mode-in').classList.toggle('active', currentMode === 'in');
+  document.getElementById('mode-out').classList.toggle('active', currentMode === 'out');
+  document.getElementById('mode-text').textContent = currentMode === 'in' ? '入库' : '出库';
+  document.getElementById('scan-btn-text').textContent = currentMode === 'in' ? '拍照识别入库' : '拍照识别出库';
+  document.getElementById('manual-mode-text').textContent = currentMode === 'in' ? '入库' : '出库';
+  document.getElementById('preview-mode-text').textContent = currentMode === 'in' ? '入库' : '出库';
+  document.getElementById('mode-in').style.borderColor = currentMode === 'in' ? '#4CAF50' : '#ddd';
+  document.getElementById('mode-out').style.borderColor = currentMode === 'out' ? '#f44336' : '#ddd';
+
+  const today = new Date().toDateString();
+  const todayIn = records.filter(r => r.type === 'in' && new Date(r.time).toDateString() === today).reduce((s, r) => s + r.quantity, 0);
+  const todayOut = records.filter(r => r.type === 'out' && new Date(r.time).toDateString() === today).reduce((s, r) => s + r.quantity, 0);
+  document.getElementById('stat-in').textContent = todayIn;
+  document.getElementById('stat-out').textContent = todayOut;
+  document.getElementById('stat-total').textContent = inventory.length;
+
+  // 利润计算
+  const todayOutRecords = records.filter(r => r.type === 'out' && new Date(r.time).toDateString() === today);
+  const todayProfit = todayOutRecords.reduce((s, r) => s + calcProfit(r.price, r.cost, r.quantity), 0);
+  const todaySales = todayOutRecords.reduce((s, r) => s + (parseFloat(r.price||0) * r.quantity), 0);
+  const stockValue = inventory.reduce((s, i) => s + (parseFloat(i.cost||0) * i.quantity), 0);
+  document.getElementById('stat-profit').textContent = fmtMoney(todayProfit);
+  document.getElementById('stat-sales').textContent = fmtMoney(todaySales);
+  document.getElementById('stat-value').textContent = fmtMoney(stockValue);
+
+  const invCard = document.getElementById('inventory-card');
+  const invMini = document.getElementById('inventory-mini-list');
+  const invCount = document.getElementById('inventory-count');
+  if (inventory.length > 0) {
+    invCard.style.display = 'block';
+    invCount.textContent = `(${inventory.length} 种)`;
+    invMini.innerHTML = inventory.slice(0, 5).map(item => {
+      const imgHtml = item.image ? `<img src="${item.image}" />` : '📦';
+      const priceHtml = item.price > 0 ? `<div class="stock-price">💵 ${fmtMoney(item.price)}</div>` : '';
+      const minHtml = item.minPrice > 0 ? `<div class="stock-price-min">🛡️ 最低 ${fmtMoney(item.minPrice)}</div>` : '';
+      return `
+      <div class="stock-item" onclick="openEditPriceModal('${esc(item.code)}')">
+        <div class="stock-image" style="background:#e8f5e9;">${imgHtml}</div>
+        <div class="stock-info">
+          <div class="stock-name">${esc(item.name || '未命名商品')}</div>
+          <div class="stock-code">${esc(item.code)}</div>
+          ${priceHtml}${minHtml}
+        </div>
+        <div class="stock-quantity">${item.quantity}</div>
+      </div>`;
+    }).join('');
+  } else {
+    invCard.style.display = 'none';
+  }
+
+  const recentList = document.getElementById('recent-list');
+  document.getElementById('record-count').textContent = `共 ${records.length} 条`;
+  if (records.length === 0) {
+    recentList.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">暂无记录</div><div class="empty-hint">拍照或手动输入开始记录</div></div>`;
+  } else {
+    recentList.innerHTML = records.slice(0, 10).map(r => {
+      const imgHtml = r.image ? `<img src="${r.image}" />` : (r.type==='in'?'📥':'📤');
+      const bg = r.type==='in' ? '#e8f5e9' : '#ffebee';
+      let priceInfo = '';
+      if (r.type === 'out' && r.price > 0) {
+        const profit = calcProfit(r.price, r.cost, r.quantity);
+        const profitClass = profit >= 0 ? 'profit' : 'loss';
+        priceInfo = `<div class="record-price-info">💵 ${fmtMoney(r.price)} × ${r.quantity} = ${fmtMoney(r.price * r.quantity)} <span class="${profitClass}">${profit>=0?'+':''}${fmtMoney(profit)}</span></div>`;
+      } else if (r.type === 'in' && r.cost > 0) {
+        priceInfo = `<div class="record-price-info">💰 进价 ${fmtMoney(r.cost)} × ${r.quantity} = ${fmtMoney(r.cost * r.quantity)}</div>`;
+      }
+      return `
+      <div class="record-item">
+        <div class="record-image" style="background:${bg};">${imgHtml}</div>
+        <div class="record-info">
+          <div class="record-name">${esc(r.name || '未命名商品')}</div>
+          <div class="record-code">${esc(r.code)}</div>
+          <div class="record-meta">
+            <span class="badge ${r.type}">${r.type==='in'?'入库':'出库'}</span>
+            <span>${formatTime(r.time)}</span>
+          </div>
+          ${priceInfo}
+        </div>
+        <div class="record-amount ${r.type}">${r.type==='in'?'+':''}${r.quantity}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatTime(ts) {
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getMonth()+1}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function showToast(msg, type) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast' + (type ? ' '+type : '');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+function setMode(m) { currentMode = m; updateUI(); }
+function triggerCamera() { document.getElementById('camera-input').click(); }
+
+function handleImage(event, fromCamera) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    previewImageData = e.target.result;
+    document.getElementById('preview-img').src = previewImageData;
+    document.getElementById('preview-code').value = '';
+    document.getElementById('preview-name').value = '';
+    document.getElementById('preview-qty').value = 1;
+    document.getElementById('preview-cost').value = '';
+    document.getElementById('preview-price').value = '';
+    document.getElementById('preview-min-price').value = '';
+    openModal('preview-modal');
+    recognizeFromImage(previewImageData);
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+function recognizeFromImage(dataUrl) {
+  showToast('🔍 正在识别图片...');
+  setTimeout(() => {
+    document.getElementById('preview-code').value = 'JG-CF-FC110B6029E8E5AD';
+    document.getElementById('preview-name').value = '玫瑰花束';
+    showToast('✅ 识别成功');
+  }, 800);
+}
+
+function confirmPreview() {
+  const code = document.getElementById('preview-code').value.trim();
+  const name = document.getElementById('preview-name').value.trim();
+  const qty = parseInt(document.getElementById('preview-qty').value) || 1;
+  if (!code) { showToast('❌ 编号不能为空', 'error'); return; }
+
+  if (currentMode === 'in') {
+    const cost = parseFloat(document.getElementById('preview-cost').value) || 0;
+    const price = parseFloat(document.getElementById('preview-price').value) || 0;
+    const minPrice = parseFloat(document.getElementById('preview-min-price').value) || 0;
+    doTransaction(code, name, qty, cost, price, minPrice);
+  } else {
+    const item = inventory.find(i => i.code === code);
+    if (!item) { showToast('❌ 库存中无此商品', 'error'); return; }
+    if (item.quantity < qty) { showToast('❌ 库存不足', 'error'); return; }
+    pendingOutCode = code;
+    pendingOutName = name || item.name;
+    document.getElementById('out-price-name').textContent = item.name;
+    document.getElementById('out-price-code').textContent = code;
+    document.getElementById('out-price-qty').value = qty;
+    document.getElementById('out-price-actual').value = item.price > 0 ? item.price : '';
+    document.getElementById('out-price-min-display').textContent = fmtMoney(item.minPrice);
+    closeModal('preview-modal');
+    updateOutPriceSummary();
+    openModal('out-price-modal');
+  }
+}
+
+function updateOutPriceSummary() {
+  const qty = parseInt(document.getElementById('out-price-qty').value) || 1;
+  const actualPrice = parseFloat(document.getElementById('out-price-actual').value) || 0;
+  const item = inventory.find(i => i.code === pendingOutCode);
+  if (!item) return;
+  const minPrice = parseFloat(item.minPrice||0);
+  const sales = actualPrice * qty;
+  const profit = calcProfit(actualPrice, item.cost, qty);
+  const profitRate = item.cost > 0 ? ((profit / (item.cost * qty)) * 100).toFixed(1) : 0;
+
+  let warning = '';
+  if (minPrice > 0 && actualPrice < minPrice) {
+    warning = `<div class="tip danger" style="margin-top:10px;"><span class="tip-icon">⚠️</span><span>卖价低于最低价！禁止出库</span></div>`;
+  }
+
+  document.getElementById('out-price-summary').innerHTML = `
+    <div class="price-summary-row"><span>进货价：</span><span>${fmtMoney(item.cost)} × ${qty}</span></div>
+    <div class="price-summary-row"><span>成本：</span><span>${fmtMoney(item.cost * qty)}</span></div>
+    <div class="price-summary-row"><span>销售额：</span><span>${fmtMoney(sales)}</span></div>
+    <div class="price-summary-row ${profit>=0?'profit':'loss'}"><span>${profit>=0?'利润':'亏损'}：</span><span>${fmtMoney(profit)}</span></div>
+    <div class="price-summary-row"><span>毛利率：</span><span>${profitRate}%</span></div>
+    ${warning}
+  `;
+}
+
+function confirmOutPrice() {
+  const qty = parseInt(document.getElementById('out-price-qty').value) || 1;
+  const actualPrice = parseFloat(document.getElementById('out-price-actual').value) || 0;
+  const item = inventory.find(i => i.code === pendingOutCode);
+  if (!item) { showToast('❌ 商品不存在', 'error'); return; }
+  if (item.quantity < qty) { showToast('❌ 库存不足', 'error'); return; }
+  if (item.minPrice > 0 && actualPrice < item.minPrice) {
+    showToast(`❌ 卖价${fmtMoney(actualPrice)}低于最低价${fmtMoney(item.minPrice)}`, 'error');
+    return;
+  }
+  doTransaction(item.code, pendingOutName, qty, item.cost, actualPrice, item.minPrice);
+  closeModal('out-price-modal');
+}
+
+function showManualModal() {
+  document.getElementById('manual-code').value = '';
+  document.getElementById('manual-name').value = '';
+  document.getElementById('manual-qty').value = 1;
+  document.getElementById('manual-cost').value = '';
+  document.getElementById('manual-price').value = '';
+  document.getElementById('manual-min-price').value = '';
+  document.getElementById('price-fields-manual').style.display = 'none';
+  openModal('manual-modal');
+  setTimeout(() => {
+    document.getElementById('manual-code').addEventListener('input', onManualCodeChange);
+  }, 100);
+}
+
+function onManualCodeChange() {
+  const code = document.getElementById('manual-code').value.trim();
+  if (!code) return;
+  const item = inventory.find(i => i.code === code);
+  if (currentMode === 'in') {
+    if (item) {
+      // 已存在商品，自动填充价格
+      document.getElementById('manual-name').value = item.name;
+      document.getElementById('manual-cost').value = item.cost || '';
+      document.getElementById('manual-price').value = item.price || '';
+      document.getElementById('manual-min-price').value = item.minPrice || '';
+      showToast('📦 已加载该商品价格');
+    }
+    document.getElementById('price-fields-manual').style.display = 'block';
+  } else {
+    if (!item) {
+      showToast('❌ 库存中无此商品', 'error');
+      document.getElementById('price-fields-manual').style.display = 'none';
+    }
+  }
+}
+
+function confirmManual() {
+  const code = document.getElementById('manual-code').value.trim();
+  const name = document.getElementById('manual-name').value.trim();
+  const qty = parseInt(document.getElementById('manual-qty').value) || 1;
+  if (!code) { showToast('❌ 请输入商品编号', 'error'); return; }
+
+  if (currentMode === 'in') {
+    const cost = parseFloat(document.getElementById('manual-cost').value) || 0;
+    const price = parseFloat(document.getElementById('manual-price').value) || 0;
+    const minPrice = parseFloat(document.getElementById('manual-min-price').value) || 0;
+    if (minPrice > 0 && price > 0 && minPrice > price) {
+      showToast('⚠️ 最低价高于卖价，请检查', 'warn');
+      return;
+    }
+    doTransaction(code, name, qty, cost, price, minPrice);
+    closeModal('manual-modal');
+  } else {
+    const item = inventory.find(i => i.code === code);
+    if (!item) { showToast('❌ 库存中无此商品', 'error'); return; }
+    if (item.quantity < qty) { showToast('❌ 库存不足', 'error'); return; }
+    pendingOutCode = code;
+    pendingOutName = name || item.name;
+    document.getElementById('out-price-name').textContent = item.name;
+    document.getElementById('out-price-code').textContent = code;
+    document.getElementById('out-price-qty').value = qty;
+    document.getElementById('out-price-actual').value = item.price > 0 ? item.price : '';
+    document.getElementById('out-price-min-display').textContent = fmtMoney(item.minPrice);
+    closeModal('manual-modal');
+    updateOutPriceSummary();
+    openModal('out-price-modal');
+  }
+}
+
+function doTransaction(code, name, qty, cost, price, minPrice) {
+  cost = parseFloat(cost) || 0;
+  price = parseFloat(price) || 0;
+  minPrice = parseFloat(minPrice) || 0;
+
+  const idx = inventory.findIndex(i => i.code === code);
+  if (currentMode === 'in') {
+    if (idx >= 0) {
+      inventory[idx].quantity += qty;
+      if (name && !inventory[idx].name) inventory[idx].name = name;
+      if (previewImageData && !inventory[idx].image) inventory[idx].image = previewImageData;
+      // 更新价格（如果新录入）
+      if (cost > 0) {
+        // 加权平均成本
+        const oldTotal = inventory[idx].cost * (inventory[idx].quantity - qty);
+        inventory[idx].cost = (oldTotal + cost * qty) / inventory[idx].quantity;
+      }
+      if (price > 0) inventory[idx].price = price;
+      if (minPrice > 0) inventory[idx].minPrice = minPrice;
+    } else {
+      inventory.push({
+        code, name: name || '未命名商品', quantity: qty,
+        image: previewImageData || '',
+        cost, price, minPrice,
+        createTime: Date.now()
+      });
+    }
+  } else {
+    if (idx < 0) { showToast('❌ 库存中无此商品', 'error'); return; }
+    if (inventory[idx].quantity < qty) { showToast('❌ 库存不足', 'error'); return; }
+    inventory[idx].quantity -= qty;
+    if (inventory[idx].quantity === 0) inventory.splice(idx, 1);
+  }
+
+  records.unshift({
+    id: Date.now(),
+    type: currentMode,
+    code,
+    name: name || (inventory.find(i=>i.code===code)?.name) || '未命名',
+    quantity: qty,
+    image: previewImageData || '',
+    cost: cost,
+    price: price,
+    time: Date.now()
+  });
+
+  saveData(STORAGE.inventory, inventory);
+  saveData(STORAGE.records, records);
+  previewImageData = null;
+  updateUI();
+  showToast(`✅ ${currentMode==='in'?'入库':'出库'}成功: ${code} × ${qty}`);
+}
+
+function showInventory() {
+  const list = document.getElementById('inventory-full-list');
+  if (inventory.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">暂无库存</div><div class="empty-hint">开始入库以建立库存</div></div>`;
+  } else {
+    list.innerHTML = inventory.map(item => {
+      const imgHtml = item.image ? `<img src="${item.image}" />` : '📦';
+      const priceHtml = item.price > 0 ? `<div class="stock-price">💵 ${fmtMoney(item.price)}</div>` : '<div class="stock-price" style="color:#999;">未设售价</div>';
+      const minHtml = item.minPrice > 0 ? `<div class="stock-price-min">🛡️ 最低 ${fmtMoney(item.minPrice)}</div>` : '';
+      const costHtml = item.cost > 0 ? `<div style="font-size:10px; color:#999;">💰 进 ${fmtMoney(item.cost)}</div>` : '';
+      const totalValue = (item.cost * item.quantity).toFixed(2);
+      return `
+      <div class="stock-item" onclick="openEditPriceModal('${esc(item.code)}')">
+        <div class="stock-image" style="background:#e8f5e9;">${imgHtml}</div>
+        <div class="stock-info">
+          <div class="stock-name">${esc(item.name)}</div>
+          <div class="stock-code">${esc(item.code)}</div>
+          ${priceHtml}${minHtml}${costHtml}
+        </div>
+        <div class="stock-quantity" style="text-align:right;">
+          <div>${item.quantity}</div>
+          <div style="font-size:10px; color:#999; font-weight:normal;">值${fmtMoney(totalValue)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  openModal('inventory-modal');
+}
+
+function openEditPriceModal(code) {
+  const item = inventory.find(i => i.code === code);
+  if (!item) return;
+  document.getElementById('edit-price-name').textContent = item.name;
+  document.getElementById('edit-price-code').textContent = code;
+  document.getElementById('edit-cost').value = item.cost || '';
+  document.getElementById('edit-price').value = item.price || '';
+  document.getElementById('edit-min-price').value = item.minPrice || '';
+  updateEditPriceSummary();
+  openModal('edit-price-modal');
+}
+
+function updateEditPriceSummary() {
+  const cost = parseFloat(document.getElementById('edit-cost').value) || 0;
+  const price = parseFloat(document.getElementById('edit-price').value) || 0;
+  const minPrice = parseFloat(document.getElementById('edit-min-price').value) || 0;
+  const profit = price - cost;
+  const profitRate = cost > 0 ? ((profit / cost) * 100).toFixed(1) : 0;
+  let warning = '';
+  if (minPrice > 0 && price > 0 && minPrice > price) {
+    warning = '⚠️ 最低价高于卖价';
+  } else if (cost > 0 && price > 0 && price < cost) {
+    warning = '⚠️ 卖价低于进货价（亏损）';
+  }
+  document.getElementById('edit-price-summary').innerHTML = `
+    <div class="price-summary-row"><span>单件利润：</span><span class="${profit>=0?'':'loss'}">${fmtMoney(profit)}</span></div>
+    <div class="price-summary-row"><span>毛利率：</span><span>${profitRate}%</span></div>
+    ${warning ? '<div style="color:#f44336; margin-top:6px;">'+warning+'</div>' : ''}
+  `;
+}
+
+function confirmEditPrice() {
+  const code = document.getElementById('edit-price-code').textContent;
+  const item = inventory.find(i => i.code === code);
+  if (!item) return;
+  const cost = parseFloat(document.getElementById('edit-cost').value) || 0;
+  const price = parseFloat(document.getElementById('edit-price').value) || 0;
+  const minPrice = parseFloat(document.getElementById('edit-min-price').value) || 0;
+  if (minPrice > 0 && price > 0 && minPrice > price) {
+    showToast('❌ 最低价不能高于卖价', 'error');
+    return;
+  }
+  item.cost = cost;
+  item.price = price;
+  item.minPrice = minPrice;
+  saveData(STORAGE.inventory, inventory);
+  closeModal('edit-price-modal');
+  updateUI();
+  showInventory();
+  showToast('✅ 价格已更新');
+}
+
+function clearInventory() {
+  if (confirm('确认清空所有库存和记录？此操作不可恢复！')) {
+    inventory = []; records = [];
+    saveData(STORAGE.inventory, inventory);
+    saveData(STORAGE.records, records);
+    updateUI(); showInventory(); updateUI();
+    showToast('✅ 已清空');
+  }
+}
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', (e) => { if (e.target === el) el.classList.add('hidden'); });
+});
+
+// 价格输入实时更新摘要
+document.addEventListener('DOMContentLoaded', () => {
+  ['edit-cost', 'edit-price', 'edit-min-price'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateEditPriceSummary);
+  });
+  ['out-price-qty', 'out-price-actual'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateOutPriceSummary);
+  });
+  ['manual-cost', 'manual-price', 'manual-min-price'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => {
+      const qty = parseInt(document.getElementById('manual-qty').value) || 1;
+      const cost = parseFloat(document.getElementById('manual-cost').value) || 0;
+      const price = parseFloat(document.getElementById('manual-price').value) || 0;
+      const minPrice = parseFloat(document.getElementById('manual-min-price').value) || 0;
+      const profit = calcProfit(price, cost, qty);
+      const profitRate = cost > 0 ? ((profit / (cost * qty)) * 100).toFixed(1) : 0;
+      document.getElementById('price-summary-manual').innerHTML = `
+        <div class="price-summary-row"><span>成本：</span><span>${fmtMoney(cost * qty)}</span></div>
+        <div class="price-summary-row"><span>预期销售：</span><span>${fmtMoney(price * qty)}</span></div>
+        <div class="price-summary-row ${profit>=0?'':'loss'}"><span>${profit>=0?'利润':'亏损'}：</span><span>${fmtMoney(profit)}</span></div>
+        <div class="price-summary-row"><span>毛利率：</span><span>${profitRate}%</span></div>
+      `;
+    });
+  });
+
+  updateUI();
+  let lastTouch = 0;
+  document.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTouch < 300) e.preventDefault();
+    lastTouch = now;
+  }, { passive: false });
+  document.addEventListener('gesturestart', e => e.preventDefault());
+});
+</script>
+</body>
+</html>
