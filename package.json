@@ -1,12 +1,18 @@
 {
   "name": "flower",
   "version": "1.0.0",
-  "description": "✅ 无需 npm / 无需 node_modules / 无需任何打包工具  \r ✅ 双击 `index.html` 即可在电脑浏览器中运行  \r ✅ 直接用手机浏览器打开也能用",
+  "description": "Flower App",
   "main": "index.js",
   "scripts": {
+    "build": "echo 'No build needed, web assets are ready'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^7.6.8",
+    "@capacitor/core": "^8.5.0"
+  }
 }
